@@ -1,0 +1,35 @@
+From 75eb5c75fe7394f9bc03a63b0dea9ff4faf6bb57 Mon Sep 17 00:00:00 2001
+From: Oleksandr Kostenko <sanyokkua@gmail.com>
+Date: Thu, 19 Nov 2026 07:58:05 +0100
+Subject: [PATCH 1/5] regen.sh: write the XBE parser's analysis JSON before
+ tools.disasm (from nfsu2-ios)
+
+---
+ tools/regen.sh | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+ mode change 100644 => 100755 tools/regen.sh
+
+diff --git a/tools/regen.sh b/tools/regen.sh
+old mode 100644
+new mode 100755
+index 7892025..89f9f0d
+--- a/tools/regen.sh
++++ b/tools/regen.sh
+@@ -25,7 +25,13 @@ GEN="${NFSU1_GEN_DIR:-/root/nfsu1x/gen}"
+ 
+ cd "$TK"
+ if [ "${LIFT_ONLY:-0}" != "1" ]; then
+-    python3 -m tools.disasm "$XBE" --seed-functions "$HERE/config/seed_functions.json"
++    # tools.disasm needs the XBE parser's section analysis. Written next to the
++    # disassembly output (gitignored) rather than into the game directory.
++    ANALYSIS="$TK/tools/disasm/output/$(basename "${XBE%.*}")_analysis.json"
++    mkdir -p "$(dirname "$ANALYSIS")"
++    python3 -m tools.xbe_parser "$XBE" --json "$ANALYSIS" --quiet
++    python3 -m tools.disasm "$XBE" --seed-functions "$HERE/config/seed_functions.json" \
++        --analysis-json "$ANALYSIS"
+     python3 -m tools.func_id "$XBE"
+     python3 -m tools.abi_analysis "$XBE"
+ fi
+-- 
+2.56.1
+

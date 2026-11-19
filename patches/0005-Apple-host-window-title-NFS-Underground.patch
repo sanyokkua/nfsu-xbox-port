@@ -1,0 +1,25 @@
+From 7c2d6674a751f28f639e056ddcbc61c2237b9504 Mon Sep 17 00:00:00 2001
+From: Oleksandr Kostenko <sanyokkua@gmail.com>
+Date: Thu, 19 Nov 2026 08:03:45 +0100
+Subject: [PATCH 5/5] Apple host: window title NFS Underground
+
+---
+ src/apple/apple_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/apple/apple_main.c b/src/apple/apple_main.c
+index 0cd9eb8..18e4e2d 100644
+--- a/src/apple/apple_main.c
++++ b/src/apple/apple_main.c
+@@ -318,7 +318,7 @@ int main(int argc, char **argv)
+         const char *h = getenv("RECOMP_VK_HEADLESS");
+         if (!(h && *h == '1')) {
+ #if TARGET_OS_IPHONE
+-            s_win = SDL_CreateWindow("NFSU2", 0, 0, 0, 0,
++            s_win = SDL_CreateWindow("NFS Underground", 0, 0, 0, 0,
+                                      (s_metal ? SDL_WINDOW_METAL : SDL_WINDOW_VULKAN) |
+                                      SDL_WINDOW_FULLSCREEN | SDL_WINDOW_ALLOW_HIGHDPI |
+                                      SDL_WINDOW_BORDERLESS);
+-- 
+2.56.1
+

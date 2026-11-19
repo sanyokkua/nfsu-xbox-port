@@ -1,0 +1,104 @@
+From eb3218ebdf033d303ea381b307f5f87e2c5054b5 Mon Sep 17 00:00:00 2001
+From: LeoDeadware <351117497+LeoDeadware@users.noreply.github.com>
+Date: Fri, 6 Nov 2026 20:36:18 +0200
+Subject: [PATCH 4/5] macOS Metal-only build: no
+ Vulkan/glslang/SPIRV-Tools/OpenSSL at run time
+
+---
+ src/apple/apple_main.c               | 15 +++++++++++----
+ xboxrecomp/CMakeLists.txt            |  4 ++--
+ xboxrecomp/src/kernel/CMakeLists.txt |  2 +-
+ 3 files changed, 14 insertions(+), 7 deletions(-)
+
+diff --git a/src/apple/apple_main.c b/src/apple/apple_main.c
+index 05e9352..0cd9eb8 100644
+--- a/src/apple/apple_main.c
++++ b/src/apple/apple_main.c
+@@ -48,7 +48,7 @@ void apple_keyboard_event(const SDL_Event *e);
+ void apple_perf_start(void);            /* apple_perf.m: [perf] lines */
+ 
+ static SDL_Window   *s_win;
+-#if !defined(NFSU2_VULKAN)
++#if !defined(NFSU2_VULKAN) && !defined(NFSU2_METAL)   /* OpenGL host (no GPU renderer of ours) */
+ static SDL_GLContext s_ctx;
+ #endif
+ static int           s_rc = 1;
+@@ -61,7 +61,7 @@ int nfsu2_apple_metal(void)
+     return s_metal;
+ }
+ 
+-#if !defined(NFSU2_VULKAN)
++#if !defined(NFSU2_VULKAN) && !defined(NFSU2_METAL)   /* OpenGL host (no GPU renderer of ours) */
+ /* nv2a_gl.c: a weak default returns 0 and the renderer would create its own
+  * window on the executor thread. */
+ int nv2a_gl_adopt_window(void **win, void **ctx)
+@@ -72,7 +72,7 @@ int nv2a_gl_adopt_window(void **win, void **ctx)
+     *ctx = s_ctx;
+     return 1;
+ }
+-#else
++#elif defined(NFSU2_VULKAN)
+ #include <SDL_vulkan.h>
+ #include <dispatch/dispatch.h>
+ 
+@@ -116,6 +116,13 @@ int nv2a_vk_host_surface(VkInstance inst, VkSurfaceKHR *surface)
+ 
+ #if defined(NFSU2_METAL)
+ #include <SDL_metal.h>
++#include <dispatch/dispatch.h>
++
++#if !defined(NFSU2_VULKAN)
++/* Metal-only macOS build: the in-game video options (recomp_manual.c) also set these Vulkan
++ * renderer knobs; nv2a_metal reads only nv2a_vk_scale_pct (its own weak copy). */
++volatile int nv2a_vk_cube_maps, nv2a_vk_fxaa, nv2a_vk_aniso, nv2a_vk_square;
++#endif
+ 
+ /* nv2a_metal.m: the window's CAMetalLayer, from a Metal view SDL adds on the
+  * main thread (as for the Vulkan surface). */
+@@ -291,7 +298,7 @@ int main(int argc, char **argv)
+         fprintf(stderr, "[apple] renderer: %s\n", s_metal ? "Metal" : "Vulkan (MoltenVK)");
+     }
+ #endif
+-#if !defined(NFSU2_VULKAN)
++#if !defined(NFSU2_VULKAN) && !defined(NFSU2_METAL)   /* OpenGL host (no GPU renderer of ours) */
+     /* The attributes nv2a_gl.c asks for when it makes the window itself. */
+     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+diff --git a/xboxrecomp/CMakeLists.txt b/xboxrecomp/CMakeLists.txt
+index aefdcfe..b63e161 100644
+--- a/xboxrecomp/CMakeLists.txt
++++ b/xboxrecomp/CMakeLists.txt
+@@ -80,7 +80,7 @@ add_subdirectory(src/video)
+ if(NOT WIN32)
+     if(XBOXRECOMP_VULKAN)
+         add_subdirectory(src/nv2a_vk)
+-    else()
++    elseif(NOT (APPLE AND XBOXRECOMP_METAL))   # Metal alone needs no GL renderer
+         add_subdirectory(src/nv2a_gl)
+     endif()
+ endif()
+@@ -105,7 +105,7 @@ target_link_libraries(xboxrecomp INTERFACE
+ if(NOT WIN32)
+     if(XBOXRECOMP_VULKAN)
+         target_link_libraries(xboxrecomp INTERFACE xbox_nv2a_vk)
+-    else()
++    elseif(NOT (APPLE AND XBOXRECOMP_METAL))
+         target_link_libraries(xboxrecomp INTERFACE xbox_nv2a_gl)
+     endif()
+ endif()
+diff --git a/xboxrecomp/src/kernel/CMakeLists.txt b/xboxrecomp/src/kernel/CMakeLists.txt
+index 6f0e628..db984c3 100644
+--- a/xboxrecomp/src/kernel/CMakeLists.txt
++++ b/xboxrecomp/src/kernel/CMakeLists.txt
+@@ -55,7 +55,7 @@ else()
+     # The crypto (kernel_crypto.c) is portable C; nothing calls OpenSSL. It
+     # stays linked on desktop for compatibility and is skipped on the Switch,
+     # which has no OpenSSL package.
+-    if(NINTENDO_SWITCH OR IOS)        # nothing calls OpenSSL; iOS has none
++    if(NINTENDO_SWITCH OR APPLE)      # nothing calls OpenSSL (none on iOS; macOS: no Homebrew at run time)
+         target_link_libraries(xbox_kernel PUBLIC platform)
+     else()
+         find_package(OpenSSL REQUIRED)
+-- 
+2.56.1
+
