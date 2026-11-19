@@ -14,4 +14,4 @@ Need for Speed: Underground for the original Xbox, USA.
 4. "NFS Underground" is put in Applications and opens. Play it from there from now on.
    Settings menu: Back + Start on a controller, F1 (fn+F1 on a MacBook) or Cmd+,. Full screen on/off: F11.
 
-This DMG holds no game code and no game data. Details, credits and the source: https://github.com/sanyokkua/nfsu1-xbox-port
+This DMG holds no game code and no game data. Details, credits and the source: https://github.com/sanyokkua/nfsu-xbox-port

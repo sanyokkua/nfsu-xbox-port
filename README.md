@@ -39,7 +39,7 @@ How it was made, step by step: [docs/PORTING.md](docs/PORTING.md). Changes per v
 You need an **Apple Silicon Mac with macOS 15 or newer** and your own disc image (ISO) of the **USA Xbox release** of
 *Need for Speed: Underground*. Nothing of the game is included: the installer builds it on your Mac from your disc.
 
-1. Download `NFS-Underground-<version>.dmg` from [Releases](https://github.com/sanyokkua/nfsu1-xbox-port/releases/latest),
+1. Download `NFS-Underground-<version>.dmg` from [Releases](https://github.com/sanyokkua/nfsu-xbox-port/releases/latest),
    open it and drag **NFS Underground Installer** to Applications.
 2. **Open it.** The installer isn't notarized by Apple, so the first time macOS refuses. Close that message (don't move it to the
    Trash), go to **System Settings > Privacy & Security**, scroll to the message about it, click **Open Anyway** and confirm.

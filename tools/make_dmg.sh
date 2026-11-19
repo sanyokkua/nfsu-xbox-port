@@ -41,7 +41,7 @@ cp build/deps/lib/libSDL2-2.0.0.dylib build/deps/lib/libSDL3.0.dylib "$KIT/libs/
 cp -R LICENSES/. "$KIT/licenses/"
 cp -R build/deps/share/licenses/. "$KIT/licenses/"
 cp LICENSE NOTICE THIRD_PARTY_NOTICES.md "$KIT/"
-echo "NFS Underground for Mac $VERSION ($(git rev-parse --short HEAD)): the source of everything in this kit is https://github.com/sanyokkua/nfsu1-xbox-port/tree/v$VERSION (engine/ = nfsu1-sw d597e08f by antoxa2584x with the Apple host and Metal renderer of nfsu2-ios by myUdav4iik, NFSU2Deadware's engine patches and this project's changes)" > "$KIT/SOURCE.txt"
+echo "NFS Underground for Mac $VERSION ($(git rev-parse --short HEAD)): the source of everything in this kit is https://github.com/sanyokkua/nfsu-xbox-port/tree/v$VERSION (engine/ = nfsu1-sw d597e08f by antoxa2584x with the Apple host and Metal renderer of nfsu2-ios by myUdav4iik, NFSU2Deadware's engine patches and this project's changes)" > "$KIT/SOURCE.txt"
 codesign --force --sign - "$APP" >/dev/null 2>&1
 # the DMG's other files
 cp docs/dmg/read-me-first.txt "$STAGE/Read me first.txt"
