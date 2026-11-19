@@ -1,0 +1,502 @@
+From 2a02cf6c4797f615e8e687954b913e332f007158 Mon Sep 17 00:00:00 2001
+From: Oleksandr Kostenko <sanyokkua@gmail.com>
+Date: Thu, 19 Nov 2026 10:07:31 +0100
+Subject: [PATCH] macOS: Settings window (Cmd+,) and Resolution Scale on Metal
+
+NFS Underground > Settings... in the menu bar SDL makes (Quit is Cmd+Q
+there): Display (window / full screen, now and at start), Frame Rate (60 or
+the original 30, at the next start) and Resolution Scale (1x..2.5x, now).
+Display and Frame Rate are kept in settings.ini in the working directory
+and become NFSU2_FULLSCREEN / NFSU2_FPS_CAP defaults; set variables win.
+
+Options > Camera > Resolution Scale, Vulkan-only before, now also on Metal
+(nv2a_metal.m rescales at the next flip); the window and the row share the
+value and nfsu1x_options.txt. Default 1.5x (was 1x on Metal).
+---
+ CMakeLists.txt         |   5 +-
+ src/apple/apple_main.c |   7 ++
+ src/apple/apple_menu.h |  18 +++
+ src/apple/apple_menu.m | 241 +++++++++++++++++++++++++++++++++++++++++
+ src/recomp_manual.c    |  65 +++++++++--
+ 5 files changed, 327 insertions(+), 9 deletions(-)
+ create mode 100644 src/apple/apple_menu.h
+ create mode 100644 src/apple/apple_menu.m
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f963191..b249925 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -68,10 +68,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE xboxrecomp)
+ if(APPLE)
+     enable_language(OBJC)
+     target_sources(${PROJECT_NAME} PRIVATE src/apple/apple_main.c src/apple/apple_game_state.c src/apple/apple_perf.m
+-                                           src/apple/apple_keyboard.c)
++                                           src/apple/apple_keyboard.c src/apple/apple_menu.m)
+     set_source_files_properties(src/apple/apple_perf.m PROPERTIES COMPILE_OPTIONS "-fobjc-arc"
+                                 INCLUDE_DIRECTORIES "${XBOXRECOMP_DIR}/src/apu")
+-    target_link_libraries(${PROJECT_NAME} PRIVATE "-framework Foundation")
++    set_source_files_properties(src/apple/apple_menu.m PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
++    target_link_libraries(${PROJECT_NAME} PRIVATE "-framework Foundation" "-framework Cocoa")
+ endif()
+ 
+ # Movies: VP6 decoded by FFmpeg instead of the lifted On2 decoder
+diff --git a/src/apple/apple_main.c b/src/apple/apple_main.c
+index 18e4e2d..107c1b4 100644
+--- a/src/apple/apple_main.c
++++ b/src/apple/apple_main.c
+@@ -27,6 +27,9 @@
+ #include <unistd.h>
+ 
+ #include <TargetConditionals.h>
++#if !TARGET_OS_IPHONE
++#include "apple_menu.h"
++#endif
+ #if TARGET_OS_IPHONE
+ #if !defined(NFSU2_VULKAN)
+ #error "iOS renders with Vulkan (MoltenVK): configure with -DNFSU2_VULKAN=ON"
+@@ -278,6 +281,9 @@ int main(int argc, char **argv)
+         fprintf(stderr, "[apple] SDL video: %s\n", SDL_GetError());
+         return 1;
+     }
++#if !TARGET_OS_IPHONE
++    apple_settings_load();                  /* settings.ini: env defaults */
++#endif
+ #if TARGET_OS_IPHONE
+     SDL_AddEventWatch(app_events, NULL);
+     if (getenv("NFSU2_GAME_DIR"))       /* the user's disc, picked in the app if missing */
+@@ -336,6 +342,7 @@ int main(int argc, char **argv)
+     }
+ #endif
+ #if !TARGET_OS_IPHONE
++    apple_menu_install(s_win);              /* NFS Underground > Settings... */
+     {
+         const char *e = getenv("NFSU2_FULLSCREEN");
+         if (s_win && !(e && !strcmp(e, "0")))
+diff --git a/src/apple/apple_menu.h b/src/apple/apple_menu.h
+new file mode 100644
+index 0000000..9d1f8fa
+--- /dev/null
++++ b/src/apple/apple_menu.h
+@@ -0,0 +1,18 @@
++/*
++ * apple_menu.h -- the macOS menu bar's Settings... item and its window
++ * (apple_menu.m). Mac only; both run on the main thread.
++ */
++#ifndef APPLE_MENU_H
++#define APPLE_MENU_H
++
++#include <SDL.h>
++
++/* settings.ini (the working directory) as environment defaults: fullscreen=
++ * -> NFSU2_FULLSCREEN, fps= -> NFSU2_FPS_CAP. Variables already set win.
++ * Before the window is made and the game starts. */
++void apple_settings_load(void);
++
++/* NFS Underground > Settings... (Cmd+,) in the menu bar SDL made. */
++void apple_menu_install(SDL_Window *win);
++
++#endif
+diff --git a/src/apple/apple_menu.m b/src/apple/apple_menu.m
+new file mode 100644
+index 0000000..0c94784
+--- /dev/null
++++ b/src/apple/apple_menu.m
+@@ -0,0 +1,241 @@
++/*
++ * apple_menu.m -- Settings... (Cmd+,) in the app menu and its window.
++ *
++ * SDL makes the menu bar (app menu with Quit, Cmd+Q; Window menu); this adds
++ * Settings... to the app menu. The window has the port's Mac settings:
++ *
++ *   Display           Window / Full Screen     now, and at the next start
++ *   Frame Rate        60 fps / 30 fps           at the next start (NFSU2_FPS_CAP)
++ *   Resolution Scale  1x .. 2.5x                now: the same value as the
++ *                     game's Options > Camera > Resolution Scale row
++ *                     (recomp_manual.c, saved in nfsu1x_options.txt)
++ *
++ * Display and Frame Rate are kept in settings.ini in the working directory
++ * (the player folder) and become environment defaults at start
++ * (apple_settings_load); a variable set by hand still wins. F11 switches
++ * the window for this run only.
++ */
++#import <Cocoa/Cocoa.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include "apple_menu.h"
++
++#define SETTINGS_FILE "settings.ini"
++
++#if defined(NFSU2_METAL) || defined(NFSU2_VULKAN)
++int nfsu1_options_scale(void);              /* recomp_manual.c */
++void nfsu1_options_set_scale(int pct);
++#  define HAVE_SCALE 1
++#endif
++
++static SDL_Window *s_win;
++static int s_fullscreen = 1;                /* settings.ini: fullscreen= */
++static int s_fps = 60;                      /* settings.ini: fps= (60 or 30) */
++
++static void settings_save(void)
++{
++    FILE *f = fopen(SETTINGS_FILE, "w");
++    if (!f) {
++        fprintf(stderr, "[settings] cannot write " SETTINGS_FILE "\n");
++        return;
++    }
++    fprintf(f, "; NFS Underground: the Mac settings (NFS Underground > Settings...)\n"
++               "fullscreen=%d\nfps=%d\n", s_fullscreen, s_fps);
++    fclose(f);
++}
++
++void apple_settings_load(void)
++{
++    char line[128];
++    FILE *f = fopen(SETTINGS_FILE, "r");
++
++    if (f) {
++        while (fgets(line, sizeof line, f)) {
++            if (!strncmp(line, "fullscreen=", 11))
++                s_fullscreen = line[11] != '0';
++            else if (!strncmp(line, "fps=", 4))
++                s_fps = atoi(line + 4) == 30 ? 30 : 60;
++        }
++        fclose(f);
++    }
++    setenv("NFSU2_FULLSCREEN", s_fullscreen ? "1" : "0", 0);
++    setenv("NFSU2_FPS_CAP", s_fps == 30 ? "30" : "60", 0);
++    fprintf(stderr, "[settings] display %s, frame rate %s\n",
++            strcmp(getenv("NFSU2_FULLSCREEN"), "0") ? "full screen" : "window",
++            atoi(getenv("NFSU2_FPS_CAP")) == 30 ? "30 fps" : "60 fps");
++}
++
++static int window_is_fullscreen(void)
++{
++    return s_win && (SDL_GetWindowFlags(s_win) & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
++}
++
++#ifdef HAVE_SCALE
++static const int k_scale_pct[] = { 100, 150, 200, 250 };
++#endif
++
++@interface NFSSettings : NSObject <NSWindowDelegate>
++@property (strong) NSPanel *panel;
++@property (strong) NSPopUpButton *display, *fps, *scale;
++@end
++
++@implementation NFSSettings
++
++static NSTextField *label(NSString *s)
++{
++    NSTextField *t = [NSTextField labelWithString:s];
++    t.alignment = NSTextAlignmentRight;
++    return t;
++}
++
++static NSTextField *note(NSString *s)
++{
++    NSTextField *t = [NSTextField wrappingLabelWithString:s];
++    t.font = [NSFont systemFontOfSize:NSFont.smallSystemFontSize];
++    t.textColor = NSColor.secondaryLabelColor;
++    return t;
++}
++
++- (NSPopUpButton *)popup:(NSArray<NSString *> *)items action:(SEL)action
++{
++    NSPopUpButton *p = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
++    [p addItemsWithTitles:items];
++    p.target = self;
++    p.action = action;
++    return p;
++}
++
++- (void)build
++{
++    NSMutableArray<NSArray<NSView *> *> *rows = [NSMutableArray array];
++
++    self.display = [self popup:@[ @"Window", @"Full Screen" ] action:@selector(displayChanged:)];
++    self.fps = [self popup:@[ @"60 fps", @"30 fps (the original)" ] action:@selector(fpsChanged:)];
++    [rows addObject:@[ label(@"Display:"), self.display ]];
++    [rows addObject:@[ label(@"Frame Rate:"), self.fps ]];
++    [rows addObject:@[ [NSGridCell emptyContentView], note(@"Frame rate changes at the next start.") ]];
++#ifdef HAVE_SCALE
++    self.scale = [self popup:@[ @"1x (640 × 480)", @"1.5x (960 × 720)", @"2x (1280 × 960)",
++                                @"2.5x (1600 × 1200)" ]
++                      action:@selector(scaleChanged:)];
++    [rows addObject:@[ label(@"Resolution Scale:"), self.scale ]];
++    [rows addObject:@[ [NSGridCell emptyContentView],
++                       note(@"Also in the game: Options > Camera > Resolution Scale.") ]];
++#endif
++    NSGridView *grid = [NSGridView gridViewWithViews:rows];
++    grid.rowSpacing = 10;
++    grid.columnSpacing = 8;
++    [grid columnAtIndex:0].xPlacement = NSGridCellPlacementTrailing;
++    for (NSInteger r = 0; r < grid.numberOfRows; r++)
++        [grid rowAtIndex:r].yPlacement = NSGridCellPlacementCenter;
++    grid.translatesAutoresizingMaskIntoConstraints = NO;
++
++    self.panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 420, 200)
++                                            styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
++                                              backing:NSBackingStoreBuffered
++                                                defer:NO];
++    self.panel.title = @"Settings";
++    self.panel.releasedWhenClosed = NO;
++    self.panel.hidesOnDeactivate = NO;
++    self.panel.floatingPanel = YES;
++    /* over the game in its full-screen space too */
++    self.panel.collectionBehavior = NSWindowCollectionBehaviorFullScreenAuxiliary |
++                                    NSWindowCollectionBehaviorMoveToActiveSpace;
++    self.panel.delegate = self;
++    [self.panel.contentView addSubview:grid];
++    [NSLayoutConstraint activateConstraints:@[
++        [grid.leadingAnchor constraintEqualToAnchor:self.panel.contentView.leadingAnchor constant:20],
++        [grid.trailingAnchor constraintEqualToAnchor:self.panel.contentView.trailingAnchor constant:-20],
++        [grid.topAnchor constraintEqualToAnchor:self.panel.contentView.topAnchor constant:20],
++        [grid.bottomAnchor constraintEqualToAnchor:self.panel.contentView.bottomAnchor constant:-20],
++    ]];
++}
++
++- (void)show:(id)sender
++{
++    if (!self.panel)
++        [self build];
++    [self.display selectItemAtIndex:window_is_fullscreen() ? 1 : 0];
++    [self.fps selectItemAtIndex:s_fps == 30 ? 1 : 0];
++#ifdef HAVE_SCALE
++    for (int i = 0; i < 4; i++)
++        if (k_scale_pct[i] == nfsu1_options_scale())
++            [self.scale selectItemAtIndex:i];
++#endif
++    fprintf(stderr, "[settings] window shown\n");
++    [self.panel center];
++    [self.panel makeKeyAndOrderFront:nil];
++    [NSApp activateIgnoringOtherApps:YES];
++}
++
++- (void)displayChanged:(NSPopUpButton *)p
++{
++    s_fullscreen = p.indexOfSelectedItem == 1;
++    settings_save();
++    if (s_win)
++        SDL_SetWindowFullscreen(s_win, s_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
++    [self.panel makeKeyAndOrderFront:nil];  /* the space may have changed */
++}
++
++- (void)fpsChanged:(NSPopUpButton *)p
++{
++    s_fps = p.indexOfSelectedItem == 1 ? 30 : 60;
++    settings_save();
++}
++
++- (void)scaleChanged:(NSPopUpButton *)p
++{
++#ifdef HAVE_SCALE
++    nfsu1_options_set_scale(k_scale_pct[p.indexOfSelectedItem]);
++#endif
++}
++
++@end
++
++static NFSSettings *s_settings;
++
++void apple_menu_install(SDL_Window *win)
++{
++    NSMenu *app = NSApp.mainMenu.itemArray.firstObject.submenu;
++    NSMenuItem *item;
++    NSInteger at = 0;
++
++    s_win = win;
++    if (!app) {
++        fprintf(stderr, "[settings] no app menu: Settings... not added\n");
++        return;
++    }
++    s_settings = [NFSSettings new];
++    /* SDL's menu already has a Settings... (Preferences...) item that does
++     * nothing; take it over rather than add a second one. */
++    item = nil;
++    for (NSMenuItem *m in app.itemArray)
++        if ([m.keyEquivalent isEqualToString:@","] || [m.title hasPrefix:@"Settings"] ||
++            [m.title hasPrefix:@"Preferences"]) {
++            item = m;
++            break;
++        }
++    if (!item) {
++        /* after "About ..." and its separator, where macOS apps keep it */
++        if (app.numberOfItems > 1 && [app itemAtIndex:1].isSeparatorItem)
++            at = 2;
++        item = [[NSMenuItem alloc] initWithTitle:@"Settings…" action:NULL keyEquivalent:@","];
++        [app insertItem:item atIndex:at];
++        [app insertItem:[NSMenuItem separatorItem] atIndex:at + 1];
++    }
++    item.title = @"Settings…";
++    item.keyEquivalent = @",";
++    item.keyEquivalentModifierMask = NSEventModifierFlagCommand;
++    item.action = @selector(show:);
++    item.target = s_settings;
++    item.enabled = YES;
++    {
++        NSMutableString *items = [NSMutableString string];
++        for (NSMenuItem *m in app.itemArray)
++            if (!m.isSeparatorItem)
++                [items appendFormat:@"%@%@%@", items.length ? @", " : @"", m.title,
++                                    m.keyEquivalent.length ? [@" ⌘" stringByAppendingString:m.keyEquivalent] : @""];
++        fprintf(stderr, "[settings] app menu: %s\n", items.UTF8String);
++    }
++}
+diff --git a/src/recomp_manual.c b/src/recomp_manual.c
+index 04dc96a..047df17 100644
+--- a/src/recomp_manual.c
++++ b/src/recomp_manual.c
+@@ -647,9 +647,14 @@ void sub_000192C0(void)
+ #define ROW_FIRST       3               /* rows 1-2 are the game's */
+ #define ENVMAP_VIEW(id) (0x002C5F20u + (uint32_t)(id) * 0x60u)
+ 
++/* Resolution Scale: Vulkan and Metal (nv2a_metal.m reads nv2a_vk_scale_pct
++ * at the next flip too); the other picture rows are the Vulkan renderer's. */
++#if defined(NFSU2_VULKAN) || defined(NFSU2_METAL)
++#  define NFSU1_SCALE 1
++extern volatile int nv2a_vk_scale_pct;
++#endif
+ #ifdef NFSU2_VULKAN
+ extern volatile int nv2a_vk_cube_maps;
+-extern volatile int nv2a_vk_scale_pct;
+ extern volatile int nv2a_vk_fxaa;
+ extern volatile int nv2a_vk_aniso;
+ extern volatile int nv2a_vk_square;
+@@ -683,13 +688,15 @@ static void refl_changed(void)
+ #endif
+ }
+ 
+-#ifdef NFSU2_VULKAN
++#ifdef NFSU1_SCALE
+ static void scale_changed(void)
+ {
+     nv2a_vk_scale_pct = s_scale_pct[s_scale_idx];
+     s_scale_saved = 1;
+ }
++#endif
+ 
++#ifdef NFSU2_VULKAN
+ static void picture_changed(void)
+ {
+     nv2a_vk_fxaa = s_fxaa;
+@@ -699,20 +706,31 @@ static void picture_changed(void)
+ #endif
+ 
+ static const char *const s_onoff[] = { "Off", "On" };
+-#ifdef NFSU2_VULKAN
++#ifdef NFSU1_SCALE
+ static const char *const s_scale_texts[] = { "1x", "1.5x", "2x", "2.5x" };
++#endif
++#ifdef NFSU2_VULKAN
+ static const char *const s_aniso_texts[] = { "Off", "2x", "4x", "8x", "16x" };
+ #endif
+ static const OptRow s_rows[] = {
+     { "Car Reflections:", s_onoff, 2, &s_refl, refl_changed },
+-#ifdef NFSU2_VULKAN
++#ifdef NFSU1_SCALE
+     { "Resolution Scale:", s_scale_texts, 4, &s_scale_idx, scale_changed },
++#endif
++#ifdef NFSU2_VULKAN
+     { "Anti-Aliasing:", s_onoff, 2, &s_fxaa, picture_changed },
+     { "Anisotropic:", s_aniso_texts, 5, &s_aniso_idx, picture_changed },
+     { "Square Pixels:", s_onoff, 2, &s_square, picture_changed },
+ #endif
+ };
+ #define N_ROWS ((int)(sizeof s_rows / sizeof s_rows[0]))
++#if defined(NFSU2_VULKAN)
++#  define N_ROW_MAX 5
++#elif defined(NFSU1_SCALE)
++#  define N_ROW_MAX 2
++#else
++#  define N_ROW_MAX 1
++#endif
+ 
+ static void options_log(void)
+ {
+@@ -722,6 +740,10 @@ static void options_log(void)
+             s_refl ? "on" : "off", s_scale_pct[s_scale_idx],
+             nv2a_vk_scale_pct ? "" : " (RECOMP_GL_SCALE)", s_fxaa ? "on" : "off",
+             s_aniso_lvl[s_aniso_idx], s_square ? "on" : "off");
++#elif defined(NFSU1_SCALE)
++    fprintf(stderr, "[options] car reflections %s, resolution scale %d%%%s\n",
++            s_refl ? "on" : "off", s_scale_pct[s_scale_idx],
++            nv2a_vk_scale_pct ? "" : " (RECOMP_GL_SCALE)");
+ #else
+     fprintf(stderr, "[options] car reflections %s\n", s_refl ? "on" : "off");
+ #endif
+@@ -759,7 +781,7 @@ void nfsu1_options_load(void)
+         fclose(f);
+     }
+     refl_changed();
+-#ifdef NFSU2_VULKAN
++#ifdef NFSU1_SCALE
+     {
+         const char *e = getenv("RECOMP_GL_SCALE");
+         if (!s_scale_saved && e && *e) {
+@@ -774,6 +796,8 @@ void nfsu1_options_load(void)
+             nv2a_vk_scale_pct = s_scale_pct[s_scale_idx];
+         }
+     }
++#endif
++#ifdef NFSU2_VULKAN
+     picture_changed();
+ #endif
+     options_log();
+@@ -795,6 +819,28 @@ static void options_save(void)
+     fclose(f);
+ }
+ 
++#ifdef NFSU1_SCALE
++/* The Mac Settings window (src/apple/apple_menu.m): the same value as the
++ * Resolution Scale row, saved the same way. Percent, one of s_scale_pct. */
++int nfsu1_options_scale(void)
++{
++    return s_scale_pct[s_scale_idx];
++}
++
++void nfsu1_options_set_scale(int pct)
++{
++    int i;
++
++    for (i = 0; i < 4; i++)
++        if (s_scale_pct[i] == pct && (i != s_scale_idx || !s_scale_saved)) {
++            s_scale_idx = i;
++            scale_changed();
++            options_save();
++            options_log();
++        }
++}
++#endif
++
+ /* Our texts in guest memory, each copied once. */
+ static uint32_t guest_str(const char *s)
+ {
+@@ -905,8 +951,10 @@ static void opt_row_input(int i)
+ }
+ 
+ static void opt_row_input_0(void) { opt_row_input(0); }
+-#ifdef NFSU2_VULKAN
++#if N_ROW_MAX > 1
+ static void opt_row_input_1(void) { opt_row_input(1); }
++#endif
++#ifdef NFSU2_VULKAN
+ static void opt_row_input_2(void) { opt_row_input(2); }
+ static void opt_row_input_3(void) { opt_row_input(3); }
+ static void opt_row_input_4(void) { opt_row_input(4); }
+@@ -1280,8 +1328,11 @@ recomp_func_t recomp_lookup_manual(uint32_t xbox_va)
+     if (xbox_va - ROW_HANDLER_VA < (uint32_t)N_ROWS) {
+         static const recomp_func_t row_input[] = {
+             opt_row_input_0,
++#if N_ROW_MAX > 1
++            opt_row_input_1,
++#endif
+ #ifdef NFSU2_VULKAN
+-            opt_row_input_1, opt_row_input_2, opt_row_input_3, opt_row_input_4,
++            opt_row_input_2, opt_row_input_3, opt_row_input_4,
+ #endif
+         };
+         return row_input[xbox_va - ROW_HANDLER_VA];
+-- 
+2.56.1
+

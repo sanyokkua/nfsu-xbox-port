@@ -8,5 +8,5 @@ BIN="${1:-$ROOT/build/metal/nfsu2_recomp}"
 P="$HOME/Library/Application Support/NFS Underground/dev"
 mkdir -p "$P/home" "$P/logs"
 [[ -f "$P/game/default.xbe" ]] || cp -c -R "$ROOT/game/extracted" "$P/game"
-cd "$P/logs"
+cd "$P"                     # settings.ini and nfsu1x_options.txt live here
 HOME="$P/home" NFSU2_GAME_DIR="$P/game" exec "$BIN" > "$P/logs/last.log" 2>&1
