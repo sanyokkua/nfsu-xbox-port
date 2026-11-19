@@ -47,7 +47,7 @@ You need an **Apple Silicon Mac with macOS 15 or newer** and your own disc image
    Install, and the installer goes on by itself when they are there.
 4. **Choose your disc image.** The installer copies the game's files (1.8 GB) into
    `~/Library/Application Support/NFS Underground`, checks that it is the USA disc, translates the game's program to C and
-   compiles it. On an M1 Pro that takes about 2 minutes, once. A window shows how far it is.
+   compiles it. On an M1 Pro that takes about 2 minutes 20 seconds, once. A window shows how far it is.
 5. **NFS Underground** is put in Applications (in `~/Applications` when Applications isn't writable) and opens. Play it from
    there. You can delete the disc image and the installer afterwards; opening the installer again offers Play or Rebuild.
 
@@ -114,9 +114,9 @@ Everything is in `~/Library/Application Support/NFS Underground/`:
 
 | Folder | What |
 |---|---|
-| `game/` | the disc's files |
+| `game/` | the disc's files, and the game's saves (`UDATA/`) |
 | `player/` | `settings.ini` (the settings menu), `nfsu1x_options.txt` (the game's Options > Camera rows) |
-| `saves/`, `cache/` | the game's saves (the Xbox's hard disk) and the shader cache |
+| `saves/`, `cache/` | the runtime's |
 | `logs/` | `nfsu1.log` (the last five runs) and `install.log` |
 
 To remove the game, delete **NFS Underground** from Applications and this folder.
