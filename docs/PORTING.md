@@ -62,6 +62,14 @@ The two trees were compared file by file (nfsu1-sw's `xboxrecomp/` against the N
 - A first Settings window (patch 0006, an AppKit panel) taught one thing: SDL's menu already has a **Settings…** item that does
   nothing, so adding one gives two, and Cmd+, goes to SDL's. The NFSU2 port takes SDL's item over; so does the menu here.
 
+## 3b. Lifter: x87 80-bit operands (2026-11-23)
+
+From the Harry Potter Chamber of Secrets port: `fld xword ptr [m80]` was lifted as a 4-byte float (`fp_push(MEMF(..)); /* fld */`)
+and `fstp m80` as a no-op. The C runtime's asin/acos load π/2 that way for |x| = 1 and got ≈ 0 (in CoS the player's heading came
+out 90° off). The lifter now emits `recomp_ld_f80` / `recomp_st_f80` (`recomp_types.h`, after `MEMF`/`MEMD`; this tree has no
+`recomp_cvt_si`), with a unit test. NFSU1: 12 loads changed to `/* fld tbyte */`, no m80 stores. Relift, build, `tools/smoke.sh`
+and a scripted Quick Race (`RECOMP_PAD_PRESS=0x10,2500,200` plus `a` every 2.5 s from 21 s in `RECOMP_PAD_SCRIPT`) pass.
+
 ## 4. A self-contained repository and the installer
 
 As for NFSU2: the patched tree is `engine/` (`git archive`), the patches are kept in `docs/upstream-patches/` as the record

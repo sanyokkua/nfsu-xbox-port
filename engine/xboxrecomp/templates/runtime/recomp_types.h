@@ -496,6 +496,38 @@ void recomp_trace_esp(const char *name, const char *tag);
 #define MEMF(addr)   (*(RECOMP_MEM_VOLATILE float    *)XBOX_PTR(addr))
 #define MEMD(addr)   (*(RECOMP_MEM_VOLATILE double   *)XBOX_PTR(addr))
 
+/* x87 80-bit extended (fld/fstp tbyte) <-> double: 64-bit mantissa with an explicit
+ * integer bit, 15-bit exponent (bias 16383), sign. The value is kept as a double, as the
+ * rest of the lifted x87 code does. */
+static inline double recomp_ld_f80(uint32_t addr)
+{
+    uint64_t m; uint16_t se; int e;
+    memcpy(&m, (const void *)XBOX_PTR(addr), 8);
+    memcpy(&se, (const void *)XBOX_PTR(addr + 8), 2);
+    e = se & 0x7FFF;
+    double v;
+    if (e == 0x7FFF)
+        v = (m << 1) ? NAN : INFINITY;
+    else if (e == 0 && m == 0)
+        v = 0.0;
+    else
+        v = ldexp((double)m, e - 16383 - 63);
+    return (se & 0x8000) ? -v : v;
+}
+static inline void recomp_st_f80(uint32_t addr, double v)
+{
+    uint64_t m = 0; uint16_t se = signbit(v) ? 0x8000 : 0;
+    if (isnan(v)) { se |= 0x7FFF; m = 0xC000000000000000ull; }
+    else if (isinf(v)) { se |= 0x7FFF; m = 0x8000000000000000ull; }
+    else if (v != 0.0) {
+        int e; double f = frexp(fabs(v), &e);          /* f in [0.5, 1) */
+        m = (uint64_t)ldexp(f, 64);                     /* exact: 53 significant bits */
+        se |= (uint16_t)(e - 1 + 16383);
+    }
+    memcpy((void *)XBOX_PTR(addr), &m, 8);
+    memcpy((void *)XBOX_PTR(addr + 8), &se, 2);
+}
+
 /* Device-aware accesses, emitted only for functions in the sections given to
  * tools.recomp --mmio-sections (the XDK's DSOUND, say). Addresses at or above
  * 0xFD000000 -- the NV2A, MCPX and flash apertures -- go to the runtime,
