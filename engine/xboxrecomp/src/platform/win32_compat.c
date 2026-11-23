@@ -672,6 +672,18 @@ static DWORD wait_single(w32_object *o, DWORD ms)
     return result;
 }
 
+/* From hpcos-xbox-port: threads blocked on an event right now (NtSetEvent's hand-off). */
+int w32_event_waiters(HANDLE h)
+{
+    w32_object *o = obj_from(h);
+    int n;
+    if (!o || o->kind != K_EVENT) return 0;
+    pthread_mutex_lock(&o->lock);
+    n = o->ev_waiters;
+    pthread_mutex_unlock(&o->lock);
+    return n;
+}
+
 DWORD WaitForSingleObject(HANDLE h, DWORD ms)
 {
     if (!h || h == PSEUDO_CURRENT_THREAD || h == PSEUDO_CURRENT_PROCESS)
