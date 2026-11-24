@@ -7,6 +7,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
 export PATH="$ROOT/.venv/bin:/opt/homebrew/bin:$PATH"
 [[ -f engine/gen/recomp_dispatch.c ]] || \
   NFSU1_XBE="$ROOT/game/extracted/default.xbe" NFSU1_GEN_DIR="$ROOT/engine/gen" engine/tools/regen.sh
+mkdir -p build; python3 tools/stubcheck.py > build/stubcheck.log || { grep -E " (BOUNDARY|code) " build/stubcheck.log; tail -1 build/stubcheck.log; exit 1; }
 cmake -S engine -B build/release -G Ninja -DCMAKE_BUILD_TYPE=Release -DNFSU2_GEN_DIR="$ROOT/engine/gen" \
   -DNFSU2_VULKAN=OFF -DNFSU2_METAL=ON -DXBOXRECOMP_D3D8_NULL=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
   -DCMAKE_PREFIX_PATH="$ROOT/build/deps" "-DCMAKE_IGNORE_PREFIX_PATH=/opt/homebrew;/usr/local" >/dev/null

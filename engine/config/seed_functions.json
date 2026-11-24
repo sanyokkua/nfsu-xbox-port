@@ -30,5 +30,321 @@
  {
   "start": "0x001ABB40",
   "note": "Callback stored at 0x2DDCF4; not reached by the static pass."
+ },
+ {
+  "start": "0x00020346",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00024602",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00040262",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000402D0",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00041CF6",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00041D30",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00046B43",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0005BB60",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00060010",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00070050",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000701D0",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0007FFF2",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0009FFB0",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000A0060",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000A1DE5",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7D28",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7D2D",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7D39",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7D3B",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7FF7",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C8065",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000F542E",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0010C0AA",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0010C0AE",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0010C0C6",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0015FFE0",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001641B2",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0016421B",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001ABA7C",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001AFEF0",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B2BF7",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B4D3A",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B5A84",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B6816",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: code): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B6A2D",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B7C19",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B7C1C",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B80B4",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B80CF",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001CFF26",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001D7D98",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00040289",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00041F14",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00041F25",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00041F33",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0005BBC1",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0005BBD3",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x0006005A",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000601D4",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00080029",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000A0088",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000A0136",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7D52",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7D5B",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7D62",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7D6B",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000C7EE6",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x00160015",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B0089",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B5A96",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B6A6A",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B7EA2",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B80AA",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B819C",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B81C6",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B81CE",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B8305",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B8419",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B8690",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B86BC",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001B8740",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001CFF73",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000602DC",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000A00D2",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001CFF9C",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001CFFF4",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x001CFFF6",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000A00F3",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
+ },
+ {
+  "start": "0x000A0103",
+  "note": "Real code the lifter stubbed (tools/stubcheck.py: BOUNDARY): a jump target inside or between detected functions."
  }
 ]
