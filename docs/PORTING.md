@@ -70,7 +70,7 @@ out 90° off). The lifter now emits `recomp_ld_f80` / `recomp_st_f80` (`recomp_t
 `recomp_cvt_si`), with a unit test. NFSU1: 12 loads changed to `/* fld tbyte */`, no m80 stores. Relift, build, `tools/smoke.sh`
 and a scripted Quick Race (`RECOMP_PAD_PRESS=0x10,2500,200` plus `a` every 2.5 s from 21 s in `RECOMP_PAD_SCRIPT`) pass.
 
-## 3c. Engine fixes from the Chamber of Secrets port (2026-11-23, not released)
+## 3c. Engine fixes from the Chamber of Secrets port (2026-11-23, 0.1.2)
 
 From `hpcos-xbox-port` (its notes: XBOX360_PORTING_NOTES.md section 14), commits a7c6fd4, de1e35e, 2587e78, e8c7e09,
 eaa3bff, cbcb224:
@@ -99,7 +99,7 @@ eaa3bff, cbcb224:
   run, 0 failures (the NFSU2 port's test built against this tree)); frame throughput as before. The runtime's own unit tests
   (`engine/xboxrecomp/tests/kernel_*`) need `pkg-config`, not installed on this Mac: not run.
 
-## 3d. Missed functions and runtime lifetime fixes from the Chamber of Secrets port (2026-11-24, not released)
+## 3d. Missed functions and runtime lifetime fixes from the Chamber of Secrets port (2026-11-24, 0.1.2)
 
 From `hpcos-xbox-port` `58773a1`, `33a2b93` and the stub check of `6ce58e0`.
 
