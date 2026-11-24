@@ -13,6 +13,9 @@ Backports from the Prisoner of Azkaban port:
   pipelines. The log says `shader language 3.0`, no `shader failed`.
 - New `tools/immscan.py` (with `seedcheck.py`, `sigmatch.py`): functions referenced only by an immediate. 331 hits, all C++
   exception-handler thunks (see docs/PORTING.md 3e); none seeded.
+- NV2A pushbuffer executor: inline and `SET_VERTEX` batches in fixed-function mode are transformed like array batches
+  (`RECOMP_INLINE_FF=0` restores the old rule), `SET_VERTEX_DATA4F(3)` diffuse is used, 1-vertex point and 2-vertex line batches
+  are kept. NFSU1 never issues such a batch on the menu/race/pause route, so its rendering does not change.
 - `tools/stubcheck.py`: bytes past a section's raw size count as data (zero fill). Still 36 stubs, 0 real code.
 
 ## 0.1.2 (2026-11-24)

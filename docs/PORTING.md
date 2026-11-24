@@ -167,6 +167,18 @@ From `hpcos-xbox-port` `58773a1`, `33a2b93` and the stub check of `6ce58e0`.
 7. **Learned stick range** (hppoa `8cfb709`): not applicable. This port has no `RECOMP_STICK_RANGE` and no `stick_deadzone.h`;
    steering is unchanged.
 
+8. **NV2A executor: inline/SET_VERTEX batches transformed** (hppoa `006d8a3`, only `nv2a_pb_exec.c`; the Metal draw-log aid and
+   overlay capture were left out): `batch_is_ffp` no longer excludes inline batches (`RECOMP_INLINE_FF=0` = old rule),
+   `SET_VERTEX_DATA4F(3)` sets the immediate diffuse, `prim_min_vertices()` keeps 1-vertex points and 2-vertex lines.
+   **Proof it is safe here:** a temporary probe (not committed) logged every batch that the new rule or the 1/2-vertex rule would
+   change, over a scripted Quick Race (title, menus, loading, race start, in-race, pause, 160 s, `RECOMP_GL_DUMP` every 300
+   frames): **0 inline fixed-function batches, 0 batches of fewer than 3 vertices, 0 `SET_VERTEX_DATA4F(3)`**. NFSU1 draws its
+   2D and HUD from arrays or vertex programs, so the three rules never fire and rendering cannot change. Screenshots of the same
+   route on the new binary, normal and `RECOMP_INLINE_FF=0`, twice (4 runs), were also compared: menus, HUD, race start, in-race
+   and pause look the same (HUD layout, text, speedo, minimap in place, no moved 2D); the pixel differences are timing (the route
+   is wall-clock driven: movie frame, menu slide-in, loading bar, timer digits, opponent and pedestrian positions), and which
+   variant ran first changed fps and the hitch count (292 vs 35, then 41 vs 189), so those are machine noise, not the rule.
+
 ## 4. A self-contained repository and the installer
 
 As for NFSU2: the patched tree is `engine/` (`git archive`), the patches are kept in `docs/upstream-patches/` as the record
