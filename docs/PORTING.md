@@ -99,6 +99,39 @@ eaa3bff, cbcb224:
   run, 0 failures (the NFSU2 port's test built against this tree)); frame throughput as before. The runtime's own unit tests
   (`engine/xboxrecomp/tests/kernel_*`) need `pkg-config`, not installed on this Mac: not run.
 
+## 3d. Missed functions and runtime lifetime fixes from the Chamber of Secrets port (2026-11-24, not released)
+
+From `hpcos-xbox-port` `58773a1`, `33a2b93` and the stub check of `6ce58e0`.
+
+- **Empty stubs that were real code.** `engine/gen/recomp_stubs_unresolved.c` gives every direct jump or call target the
+  disassembler did not find as a function an empty body (`g_esp += 4`, or `4 + N` for one ending in `ret N`). For a real
+  instruction start the work never runs: a shared exit (`pop edi; pop esi; ret`) leaves the caller with its stack and
+  registers wrong. `tools/stubcheck.py` (capstone, `.venv`) classes each stub: `BOUNDARY` (an instruction start inside a
+  detected function) and `code` (between functions, in .text/D3D/XGRPH/DSOUND/XPP) are real and get seeded; `mid-insn`,
+  `pad` (int3 padding, reached only from a jump table the lifter decoded as code, e.g. inside `sub_0010C0D0`) and `data`
+  are harmless. Unlike CoS's copy it reads the XBE itself, takes the code ranges from the section headers and also checks
+  the `ret N` stubs. Seeding splits a function, which turns its internal jumps into new stubs, so it took 4 passes:
+  41 + 31 + 5 + 2 = **79 seeds** (`engine/config/seed_functions.json`, now 87); 77 stubs -> 36, 0 real. Shared exits among them:
+  0x5BBD3, 0x80029, 0xA0136, 0x10C0AA, 0x1CFFF4/F6, 0x602DC; most others are loop heads and branch targets in functions the
+  disassembler cut in two (0x20346, 0x41CF6, 0x1B7C19-0x1B8740). `tools/relift.sh`
+  (new: full regen, stub check, build) and `tools/build_release.sh` stop when a stub is real code.
+- **Skipped wild call** (`recomp_icall_skip_esp`, `recomp_types.h`): at a site followed by `add esp, N` only the return
+  address is popped. Here esp is passed in, not read from the global: a leaf function keeps esp in a local.
+- **Handles and objects** (`win32_compat.c`): `obj_get` takes a reference for reads, writes (`w32_handle_get_fd` /
+  `w32_handle_put`) and `WaitForSingleObject`; open handles are counted apart from references, a handle closes once,
+  `obj_from` refuses a closed object, `DuplicateHandle` adds a handle; registry 262144 slots, logged when full.
+  `NtReadFile`/`NtWriteFile` at an offset are one `pread`/`pwrite` (the errno survives the release). Fits this tree's
+  2587e78: a read on a just-closed handle still gets `INVALID_HANDLE` from here and the bridge's 2 s end-of-file turns it
+  into `STATUS_END_OF_FILE`; next-fit tokens (`BRIDGE_HANDLE_MAX` 65536) keep that token unused longer.
+- **Kernel** (`kernel_bridge.c`): timers already signalled inside the lock before the DPC, reset inside it and logged when
+  full here (NFSU1's autosave fix); only the count goes 128 -> 256. `kdisp_is_guest` drops a stale shadow whose memory now
+  holds a guest event or semaphore; `KeInitializeEvent/Mutant/Semaphore` insert the shadow after writing the header.
+- **Heap**: a request larger than the heap is refused; the top check is 64-bit.
+- **Not ported:** CoS's factory game region (0x104), spawner guard, entity diagnostics and `HPCOS_*` switches.
+- Verified: `tools/relift.sh` -> `stubcheck: 36 stubs, 0 real code`, build OK; `tools/smoke.sh` OK (75 s); a scripted Quick
+  Race (START every 2.5 s, A every 2.5 s from 21 s, 100 s, throwaway HOME) exits by the timer in the race, no `[ICALL]`
+  failure logged.
+
 ## 4. A self-contained repository and the installer
 
 As for NFSU2: the patched tree is `engine/` (`git archive`), the patches are kept in `docs/upstream-patches/` as the record

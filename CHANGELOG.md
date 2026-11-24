@@ -15,6 +15,16 @@ Engine fixes from the Harry Potter Chamber of Secrets port:
 - Log: one `[metal]` line each for border addressing, W-buffer depth and fog-unit use.
   NFSU1 uses no W-buffer depth; its fog is linear with params 1, 1 (factor = coordinate, as drawn
   already), so the CoS fog unit is not ported.
+- Lifter: **79 missed functions seeded** that were empty stubs. The lifter gives every jump or call target it did not
+  find as a function an empty body (a bare `ret`); 41 of this game's 77 such stubs were real code, many of them a function's
+  shared exit (`pop edi; pop esi; ret`), so the caller got its stack and registers back wrong (in CoS this froze the game).
+  `tools/stubcheck.py` classes every stub; `tools/relift.sh` and `tools/build_release.sh` fail when one is real code.
+- Runtime: a skipped wild indirect call at a site that pops its own arguments (`add esp, N` after the call) pops only the
+  return address (esp was left N bytes high). Reads, writes and waits hold their object, so a close on another thread
+  no longer frees it in use; a handle closes once; reads and writes at an offset are one `pread`/`pwrite` (two threads on
+  one handle got each other's bytes); handle tokens are handed out next-fit; 65536 handle slots and 256 timers. A Ke
+  object shadow whose memory now holds the guest's own event is dropped. A heap request larger than the heap is refused
+  (it rounded to 0).
 
 ## 0.1.1 (2026-11-23)
 
