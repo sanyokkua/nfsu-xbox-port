@@ -152,6 +152,21 @@ From `hpcos-xbox-port` `58773a1`, `33a2b93` and the stub check of `6ce58e0`.
    size is `data`, not `code`. Result unchanged: 36 stubs, 0 real code, no new seeds.
 4. Build OK; `tools/smoke.sh 60`: OK, 5 frames, last mean 17 (before the backports: not rerun; same gate).
 
+5. **Metal shaders as MSL 3.0** (hppoa `b85ffa1`): `s_copts.languageVersion`, `RECOMP_MTL_LANG`, the hitch line counts pipelines.
+   hppoa measured one combiner shader at 540 ms (4.1, the default) against 43 ms (3.0). Here, `tools/smoke.sh 90` A/B with
+   `RECOMP_MTL_LANG=0` (log: `shader language 4.0`) against the default (`3.0`): both OK, 8 frames, last mean 16/17, no `shader failed`.
+   The smoke route does not show the stall clearly: with 3.0 the only compile hitches are 4 programs 104 ms + 12 pipelines 44 ms and
+   9 programs 157 ms + 19 pipelines 54 ms (about 25 ms a program); the default-language run had none above 50 ms in the same route
+   (the route is not frame-exact, so those programs may not have been drawn). Needs a play test with a fresh HOME to compare.
+6. **`tools/immscan.py`** (from hppoa, with `seedcheck.py` and `sigmatch.py`): 2,032 immediates point at code, 331 after `int3`/`ret`
+   padding that are no function start (112 inside a lifted span, 219 free), all in `0x1BDE20..0x1C4B7B`. Every one is the same
+   thing: `mov eax, <unwind table>; jmp 0x1B2442` (the C++ `__CxxFrameHandler` thunk, a few with a catch body after it), pushed by a
+   function's SEH prolog (`push handler; mov eax, fs:[0]; push eax`, 258 hits, or `push handler; push eax; mov fs:[0], esp`, 73). They
+   run only when an exception is raised and the game raises none (no handler ever entered in the logs), so they are real code that is
+   never called: **none seeded**. No relift needed; stubcheck unchanged (36 stubs, 0 real code).
+7. **Learned stick range** (hppoa `8cfb709`): not applicable. This port has no `RECOMP_STICK_RANGE` and no `stick_deadzone.h`;
+   steering is unchanged.
+
 ## 4. A self-contained repository and the installer
 
 As for NFSU2: the patched tree is `engine/` (`git archive`), the patches are kept in `docs/upstream-patches/` as the record

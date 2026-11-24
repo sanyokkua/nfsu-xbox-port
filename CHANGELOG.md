@@ -9,6 +9,10 @@ Backports from the Prisoner of Azkaban port:
   is identical (13,009 functions).
 - Kernel: `ExQueryNonVolatileSetting` answers `XC_FACTORY_AV_REGION` (0x103) as NTSC-M (0x00400100), matching the NTSC-U
   disc. The game does not query it in a 60 s run; the answer is only there for titles that do.
+- Metal: shaders compile as MSL 3.0 (`RECOMP_MTL_LANG=<major>.<minor>`, `0` = Metal's default); the `[hitch]` log line counts
+  pipelines. The log says `shader language 3.0`, no `shader failed`.
+- New `tools/immscan.py` (with `seedcheck.py`, `sigmatch.py`): functions referenced only by an immediate. 331 hits, all C++
+  exception-handler thunks (see docs/PORTING.md 3e); none seeded.
 - `tools/stubcheck.py`: bytes past a section's raw size count as data (zero fill). Still 36 stubs, 0 real code.
 
 ## 0.1.2 (2026-11-24)
