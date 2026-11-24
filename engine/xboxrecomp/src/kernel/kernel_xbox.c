@@ -196,6 +196,18 @@ NTSTATUS __stdcall xbox_ExQueryNonVolatileSetting(
         }
         break;
 
+    case 0x103:
+        /* XC_FACTORY_AV_REGION: NTSC-M (0x00400100), as this NTSC-U disc's
+         * certificate (region 1) and the DVD region above say. XGetVideoStandard
+         * returns its second byte (1 = NTSC-M). Unanswered it was 0 (the
+         * default below). From hppoa-xbox-port, where it picked the frame floor. */
+        if (ValueLength >= sizeof(ULONG)) {
+            *(PULONG)Value = 0x00400100;
+            if (Type) *Type = 4;
+            if (ResultLength) *ResultLength = sizeof(ULONG);
+        }
+        break;
+
     case XC_MISC:
         /* Misc flags: 0 = no special flags */
         if (ValueLength >= sizeof(ULONG)) {
