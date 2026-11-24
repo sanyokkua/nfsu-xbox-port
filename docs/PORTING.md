@@ -139,6 +139,19 @@ From `hpcos-xbox-port` `58773a1`, `33a2b93` and the stub check of `6ce58e0`.
   Race (START every 2.5 s, A every 2.5 s from 21 s, 100 s, throwaway HOME) exits by the timer in the race, no `[ICALL]`
   failure logged.
 
+## 3e. Backports from the Prisoner of Azkaban port (2026-11-24, unreleased)
+
+1. **Disasm `_prune_data_call_targets`** (hppoa `7b59edc`). This tree had none of it, so the whole pass came over: `_split_call_targets`
+   recorded in `_pass_call_targets`, the prune and rebuild after the first `_build_functions`, and the chain rule (calls from a
+   function that is itself only called from data are not evidence). Relift: 13,009 functions before and after, no start dropped or
+   added, nothing printed by the prune; the 4 unit tests and the other 25 disasm tests pass.
+2. **`XC_FACTORY_AV_REGION` (0x103)** (hppoa `c053b83`) answers NTSC-M `0x00400100`. This port has no region choice: the kernel
+   hardcodes North America (DVD region 1, language English), and the XBE certificate region is 0x1. The index is not queried in a
+   60 s run (no `index=0x103` in the log), so nothing changes here.
+3. **`tools/stubcheck.py`** (hppoa `79c7af5`): it already covered `.text` plus D3D/XGRPH/DSOUND/XPP; now a stub past a section's raw
+   size is `data`, not `code`. Result unchanged: 36 stubs, 0 real code, no new seeds.
+4. Build OK; `tools/smoke.sh 60`: OK, 5 frames, last mean 17 (before the backports: not rerun; same gate).
+
 ## 4. A self-contained repository and the installer
 
 As for NFSU2: the patched tree is `engine/` (`git archive`), the patches are kept in `docs/upstream-patches/` as the record

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+Backports from the Prisoner of Azkaban port:
+
+- Disassembler: a call target that splits an instruction is dropped when its only callers are in bodies decoded out of data
+  (`_prune_data_call_targets`, which this tree did not have yet, with its tests). No change for this game: `functions.json`
+  is identical (13,009 functions).
+- Kernel: `ExQueryNonVolatileSetting` answers `XC_FACTORY_AV_REGION` (0x103) as NTSC-M (0x00400100), matching the NTSC-U
+  disc. The game does not query it in a 60 s run; the answer is only there for titles that do.
+- `tools/stubcheck.py`: bytes past a section's raw size count as data (zero fill). Still 36 stubs, 0 real code.
+
 ## 0.1.2 (2026-11-24)
 
 Engine fixes from the Harry Potter Chamber of Secrets port:
