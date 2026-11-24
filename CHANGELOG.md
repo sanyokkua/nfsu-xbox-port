@@ -25,6 +25,10 @@ Engine fixes from the Harry Potter Chamber of Secrets port:
   one handle got each other's bytes); handle tokens are handed out next-fit; 65536 handle slots and 256 timers. A Ke
   object shadow whose memory now holds the guest's own event is dropped. A heap request larger than the heap is refused
   (it rounded to 0).
+- Input: the app no longer aborts when a controller disconnects. sdl2-compat keeps its pad list without a lock, and the
+  game's thread looked for pads again while the main thread did the same. Pads are now opened and closed on the main thread
+  only; the game's thread just reads them (from the CoS port). Dev: `NFSU2_PAD_HOTPLUG_TEST=<ms>` attaches and detaches a
+  virtual pad that often.
 
 ## 0.1.1 (2026-11-23)
 

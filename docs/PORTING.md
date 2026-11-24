@@ -127,6 +127,13 @@ From `hpcos-xbox-port` `58773a1`, `33a2b93` and the stub check of `6ce58e0`.
   full here (NFSU1's autosave fix); only the count goes 128 -> 256. `kdisp_is_guest` drops a stale shadow whose memory now
   holds a guest event or semaphore; `KeInitializeEvent/Mutant/Semaphore` insert the shadow after writing the header.
 - **Heap**: a request larger than the heap is refused; the top check is 64-bit.
+- **Pad hotplug abort** (CoS `e64d110`): the CoS release check aborted in `SDL_NumJoysticks` ("pointer being freed was not
+  allocated") as a controller disconnected: `xbox_InputGetState` -> `xbox_InputInit` on the game's thread rescanned pads
+  while the main thread refreshed sdl2-compat's unlocked pad list for the hotplug event. `xbox_input_rescan()` now opens and
+  closes pads on the main thread (`apple_main.c`, at start and on `SDL_JOYDEVICEADDED/REMOVED`); the game's thread reads them
+  under `g_pad_lock` without `SDL_GameControllerUpdate`; rumble takes the lock. Stress: `NFSU2_PAD_HOTPLUG_TEST=<ms>`.
+  Rule: only the thread that pumps SDL's events opens, closes or enumerates pads. Checked: `tools/smoke.sh` OK; 120 s with
+  `NFSU2_PAD_HOTPLUG_TEST=37` (about 3,600 pad rescans logged) exits by the timer, no abort.
 - **Not ported:** CoS's factory game region (0x104), spawner guard, entity diagnostics and `HPCOS_*` switches.
 - Verified: `tools/relift.sh` -> `stubcheck: 36 stubs, 0 real code`, build OK; `tools/smoke.sh` OK (75 s); a scripted Quick
   Race (START every 2.5 s, A every 2.5 s from 21 s, 100 s, throwaway HOME) exits by the timer in the race, no `[ICALL]`
