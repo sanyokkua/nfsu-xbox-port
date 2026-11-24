@@ -76,6 +76,9 @@ class FunctionDetector:
 
         # Candidate function starts: address -> (confidence, method)
         self._candidates: Dict[int, Tuple[float, str]] = {}
+        # Call targets that land inside an instruction the sweep decoded
+        # coherently, with no function-shaped bytes there (_pass_call_targets).
+        self._split_call_targets: Set[int] = set()
 
         # Final function list
         self.functions: Dict[int, Function] = {}
@@ -117,6 +120,9 @@ class FunctionDetector:
 
         # Pass 5: Build functions from candidates
         self._build_functions(sections)
+        if self._prune_data_call_targets():
+            self.functions.clear()
+            self._build_functions(sections)
 
         # Pass 6: Tail-jump targets. A function reached only by "jmp" and never
         # by "call" is invisible to every pass above, so it is emitted as a stub
@@ -418,6 +424,14 @@ class FunctionDetector:
             section = self.image.get_section_at_va(target)
             if not (section and section.executable):
                 continue
+            # A "call" decoded out of data can land in the middle of an
+            # instruction of real code; see _prune_data_call_targets, which
+            # needs the function bodies and so runs after the first build.
+            if (self.engine.instruction_covering(target) is not None
+                    and not (self.engine.probes_as_prologue(target)
+                             or self.engine.probes_as_constant_stub(target)
+                             or self.engine.probes_as_vcall_thunk(target))):
+                self._split_call_targets.add(target)
             # A direct call to an executable address is the strongest evidence
             # of a function start there is -- stronger than a prologue match,
             # which is a guess about bytes. It used to be discarded whenever the
@@ -456,6 +470,69 @@ class FunctionDetector:
         if realigned or unaligned:
             print(f"  Realigned {realigned} call targets the sweep stepped over"
                   f" ({unaligned} rejected: bytes do not decode as a function)")
+
+    def _prune_data_call_targets(self) -> bool:
+        """
+        Drop call-target starts that split a decoded instruction and are
+        called only from outside every function -- calls decoded out of data.
+
+        NFS Carbon's XPP section opens with a driver table; one of its bytes
+        decodes as `call 0x0039E9B0`, the last byte of a `mov eax, [0x4B8B74]`
+        in the USB enumerator sub_0039E8F0. As a function start it cut the
+        enumerator off after its first call, GET_DESCRIPTOR(config) was never
+        sent, and no pad ever enumerated. NFSU2's XNET header has one too
+        (0x003016A2). Targets with a caller inside a real function stay: the
+        sweep decodes out of phase after tables, and a real call landing there
+        is the better evidence (NFSU1 0x0019C4C0, after int3 padding).
+        """
+        if not self._split_call_targets:
+            return False
+        bounds = sorted((f.start, f.end) for f in self.functions.values())
+        starts = [b[0] for b in bounds]
+
+        def inside_a_function(addr: int) -> bool:
+            i = bisect.bisect_right(starts, addr) - 1
+            return i >= 0 and addr < bounds[i][1]
+
+        def function_at(addr: int):
+            i = bisect.bisect_right(starts, addr) - 1
+            return starts[i] if i >= 0 and addr < bounds[i][1] else None
+
+        callers: Dict[int, List[int]] = {}
+        for insn in self.engine.instructions.values():
+            if insn.is_call:
+                callers.setdefault(insn.call_target, []).append(insn.address)
+
+        # A function known only as a call target, and called only from outside
+        # every function, is itself a body decoded out of data: its calls are
+        # no evidence either. PoA's XGRPH tables decode as sub_002B48AE (its one
+        # caller is in the tables too), whose "call 0x002B87FF" cut DSOUND's
+        # pool allocator after ExQueryPoolBlockSize: every DirectSound object
+        # got its block size as its address. Such functions are kept; only
+        # their calls stop counting as a real caller.
+        def from_data(start) -> bool:
+            cand = self._candidates.get(start)
+            return (cand is not None and cand[1] == "call_target"
+                    and not any(inside_a_function(a) for a in callers.get(start, [])))
+
+        def real_caller(addr: int) -> bool:
+            f = function_at(addr)
+            return f is not None and not from_data(f)
+
+        dropped = []
+        for target in sorted(self._split_call_targets):
+            cand = self._candidates.get(target)
+            if not cand or cand[1] != "call_target":
+                continue
+            if any(real_caller(a) for a in callers.get(target, [])):
+                continue
+            del self._candidates[target]
+            dropped.append(target)
+        if dropped:
+            print(f"  {len(dropped)} call target(s) dropped: they split an"
+                  f" instruction and are only called from data ("
+                  + ", ".join(f"0x{t:08X}" for t in dropped) + ")")
+        return bool(dropped)
 
     def _pass_indirect_call_slots(self) -> None:
         """
