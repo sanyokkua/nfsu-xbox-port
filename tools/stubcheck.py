@@ -11,7 +11,7 @@ wrong (Harry Potter CoS: a tail jump to such an exit froze the game at the next 
   code      outside every function but in a code section: real code, seed it
   mid-insn  inside an instruction of a detected function: a misdecode, harmless
   pad       int3 alignment padding (reached only from a misdecoded jump table): harmless
-  data      outside the code sections: harmless
+  data      outside the code sections, or past a section's raw size (zero fill): harmless
 Exits 1 when any stub is real code. Seeding one can split a function and turn its internal jumps into new
 stubs: regenerate (engine/tools/regen.sh) and run this again until it passes.
 From hpcos-xbox-port's tools/stubcheck.py; the XBE reader is inlined and the code ranges come from the
@@ -68,7 +68,8 @@ for a in (int(x, 16) for x in stubs):
         s = rng[i][0]
         kind = "BOUNDARY" if a in {x.address for x in md.disasm(read(secs, s, a - s + 16), s)} else "mid-insn"
     else:
-        kind = "code" if any(lo <= a < hi for lo, hi in code) else "data"
+        # bytes past a section's raw data (zero fill, nothing in the file) are not code
+        kind = "code" if any(lo <= a < hi for lo, hi in code) and read(secs, a, 1) else "data"
     if kind in ("BOUNDARY", "code") and read(secs, a, 1) == b"\xcc":
         kind = "pad"
     real += kind in ("BOUNDARY", "code")
