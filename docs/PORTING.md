@@ -139,7 +139,7 @@ From `hpcos-xbox-port` `58773a1`, `33a2b93` and the stub check of `6ce58e0`.
   Race (START every 2.5 s, A every 2.5 s from 21 s, 100 s, throwaway HOME) exits by the timer in the race, no `[ICALL]`
   failure logged.
 
-## 3e. Backports from the Prisoner of Azkaban port (2026-11-24, unreleased)
+## 3e. Backports from the Prisoner of Azkaban port (2026-11-24, 0.1.3)
 
 1. **Disasm `_prune_data_call_targets`** (hppoa `7b59edc`). This tree had none of it, so the whole pass came over: `_split_call_targets`
    recorded in `_pass_call_targets`, the prune and rebuild after the first `_build_functions`, and the chain rule (calls from a

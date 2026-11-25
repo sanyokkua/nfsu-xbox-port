@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased
+## 0.1.3 (2026-11-25)
+
+Renderer and build fixes found in the Harry Potter Prisoner of Azkaban port, brought over. For players:
+
+- Graphics: depth is now clamped per pixel and geometry outside the clip range is culled per pixel, so far-away or very close
+  surfaces no longer show stretched or missing pieces.
+- Graphics: stencil operation 0 is now "zero", not "keep" (shadows and masks use it); the alpha test uses the rounded 8-bit
+  alpha, as the Xbox does (fewer flickering cut-outs); surfaces facing away from the eye are no longer lit with a flipped normal.
+- Graphics: a polygon offset slope and the fixed-function drawing path (immediate and vertex-by-vertex draws, vertex colours,
+  points and lines) now follow the Xbox. NFSU1 does not use those draws on the menu or race route, so you will not see a change
+  there; they only matter to other games.
+- Faster first start: shaders are compiled with Metal Shading Language 3.0, which compiles much quicker than the default
+  (fewer stalls the first time a new effect appears).
+- Build: the translator no longer keeps false function entries found in data, a stub check reads past a section's end as data,
+  and a new scan tool finds code reached only by an address constant. For this game the result is unchanged (13,009 functions,
+  36 stubs, none real code).
+- Nothing changes in the controls, saves or settings. Installed an earlier version? Open the new installer and choose **Rebuild**;
+  your saves and settings stay.
+
+Technical details:
 
 - Renderer fixes from the PoA xemu audit: per-pixel depth clamp, clip-range pixel cull, stencil op 0 = ZERO, rounded 8-bit alpha test, no FF normal flip (env switches `RECOMP_MTL_ZCLAMP_PIXEL=0`, `RECOMP_MTL_ZCULL=0`, `RECOMP_MTL_STENCIL_ZERO=0`, `RECOMP_ATEST_ROUND=0`, `RECOMP_FF_FLIP_NORMALS=1`).
 
