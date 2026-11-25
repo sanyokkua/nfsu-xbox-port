@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Renderer fixes from the PoA xemu audit: per-pixel depth clamp, clip-range pixel cull, stencil op 0 = ZERO, rounded 8-bit alpha test, no FF normal flip (env switches `RECOMP_MTL_ZCLAMP_PIXEL=0`, `RECOMP_MTL_ZCULL=0`, `RECOMP_MTL_STENCIL_ZERO=0`, `RECOMP_ATEST_ROUND=0`, `RECOMP_FF_FLIP_NORMALS=1`).
+
 Backports from the Prisoner of Azkaban port:
 
 - Disassembler: a call target that splits an instruction is dropped when its only callers are in bodies decoded out of data

@@ -190,6 +190,15 @@ From `hpcos-xbox-port` `58773a1`, `33a2b93` and the stub check of `6ce58e0`.
      warning occurs in the route. Porting needs the whole fixed-function texgen first; do it only if a car or reflection looks wrong.
    - `skin_second_layer` (`RECOMP_SKIN_LAYER`) left out as asked. Build OK, `tools/smoke.sh 60` OK.
 
+10. **Round 5 renderer fixes from PoA (xemu audit, hppoa 0961689).** Each has an off switch. Depth clamp per pixel
+    (`RECOMP_MTL_ZCLAMP_PIXEL=0` = old per-vertex clamp; `VsU.u_zv`). Clip-range pixel cull in CULL mode (`RECOMP_MTL_ZCULL=0`;
+    new `vZw` varying, `Nv2aMslFs.zcull`; this port has no W-buffer, so no skip is needed). Stencil op 0 = ZERO
+    (`RECOMP_MTL_STENCIL_ZERO=0`). Alpha test on rounded 8-bit alpha (`RECOMP_ATEST_ROUND=0`). FF lighting no longer
+    flips normals facing away (`RECOMP_FF_FLIP_NORMALS=1` brings the flip back). The patch was hand-merged (this
+    renderer is older: no `u_fog`, no W-buffer). The draw-log aids ([dl] clip/stencil, [zc]) were left out.
+    Route A/B (160 s Quick Race, all five off vs on): static scenery identical, no new artifact; timing differs by
+    wall-clock pad script only.
+
 ## 4. A self-contained repository and the installer
 
 As for NFSU2: the patched tree is `engine/` (`git archive`), the patches are kept in `docs/upstream-patches/` as the record
