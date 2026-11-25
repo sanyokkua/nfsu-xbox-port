@@ -2660,6 +2660,20 @@ static DynState s_dyn;
 static uint32_t zmax_of(const uint32_t *r);
 static int s_zb_seen;
 
+/* hppoa play test 3: depth is clamped per pixel (MTLDepthClipModeClamp), not per vertex (nv2a_metal_msl.c
+ * nv2a_clip), so coplanar meshes do not cut each other along triangle edges. RECOMP_MTL_ZCLAMP_PIXEL=0 clamps
+ * each vertex's z to [0, w] as before. */
+static int zclamp_vertex(void)
+{
+    static int v = -1;
+    if (v < 0) {
+        const char *e = getenv("RECOMP_MTL_ZCLAMP_PIXEL");
+        v = e && *e == '0';
+        fprintf(stderr, "[mtl] depth clamped per %s\n", v ? "vertex (RECOMP_MTL_ZCLAMP_PIXEL=0)" : "pixel");
+    }
+    return v;
+}
+
 /* Returns 0 when the draw shows nothing (front-and-back culled triangles:
  * Metal has no such cull mode). */
 static int apply_dynamic(const uint32_t *r, int has_depth, uint32_t cls, float slope_k)
@@ -3401,6 +3415,7 @@ static void mtl_draw_raw_inner(const Nv2aRawBatch *b)
         vb.aa[0] = b->aa_sx > 0 ? b->aa_sx : 1.0f;
         vb.aa[1] = b->aa_sy > 0 ? b->aa_sy : 1.0f;
         vb.xform = b->xform == 1 ? 1 : 0;
+        vb.zv = zclamp_vertex();
         if (!s_vs_valid || memcmp(&vb, &s_vs_cur, sizeof vb)) {
             [s_enc setVertexBytes:&vb length:sizeof vb atIndex:NV2A_MSL_VS_BLOCK];
             s_vs_cur = vb;
@@ -3429,6 +3444,16 @@ static void mtl_draw_raw_inner(const Nv2aRawBatch *b)
             }
         }
         memset(&fb, 0, sizeof fb);
+        {   /* hppoa: SET_ZMIN_MAX_CONTROL ZCLAMP_EN = CULL (bits 4-7 = 0): pixels outside the clip range
+             * (SET_CLIP_MIN/MAX) are dropped (xemu glsl/psh.c). This port has no W-buffer. RECOMP_MTL_ZCULL=0: off. */
+            static int zc = -1;
+            if (zc < 0) { const char *e = getenv("RECOMP_MTL_ZCULL"); zc = !(e && *e == '0'); }
+            if (zc && !(r[0x1D78 / 4] & 0xF0u)) {
+                float cmin, cmax, zm = (float)zmax_of(r);
+                memcpy(&cmin, &r[0x394 / 4], 4); memcpy(&cmax, &r[0x398 / 4], 4);
+                if (cmax > cmin) { fb.zcull[0] = 1.0f; fb.zcull[1] = cmin / zm; fb.zcull[2] = cmax / zm; }
+            }
+        }
         for (i = 0; i < 4; i++) {
             fb.tscale[i][0] = tscale[i][0];
             fb.tscale[i][1] = tscale[i][1];
@@ -4050,6 +4075,16 @@ static void mtl_flip_inner(void)
                 char path[320];
                 snprintf(path, sizeof path, "%sat%05u.bmp", dump_prefix[0] ? dump_prefix : "f", s_frame);
                 dump_surface(s, path);
+                for (const char *e = getenv("RECOMP_GL_DUMP_SURF"); e && *e; ) {   /* hppoa: the targets too */
+                    uint32_t va = (uint32_t)strtoul(e, NULL, 16);
+                    MtSurf *t = surf_find(va);
+                    if (t && t->tex) {
+                        snprintf(path, sizeof path, "%sat%05u_%08X.bmp", dump_prefix[0] ? dump_prefix : "f", s_frame, va);
+                        dump_surface(t, path);
+                    }
+                    e = strchr(e, ',');
+                    if (e) e++;
+                }
                 s_ft_dumped = 1;
                 left--;
             }
