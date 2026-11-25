@@ -179,6 +179,17 @@ From `hpcos-xbox-port` `58773a1`, `33a2b93` and the stub check of `6ce58e0`.
    is wall-clock driven: movie frame, menu slide-in, loading bar, timer digits, opponent and pedestrian positions), and which
    variant ran first changed fps and the hitch count (292 vs 35, then 41 vs 189), so those are machine noise, not the rule.
 
+9. **Metal fixes from PoA, round 4** (hppoa `b010ad5`, `918dac2`):
+   - **P8 hash** taken (`bytes_hash_all` in `tex_get`). Route with `RECOMP_TEX_CHANGES=1`: P8 (format 0B) textures exist, two 512x512,
+     seen to change once (frame 2345, loading); no visible difference.
+   - **Polygon offset slope x render scale** taken (`apply_dynamic` gets the target scale; `RECOMP_MTL_ZSLOPE=0` off). The route (menus,
+     loading, race, pause) never logs `polygon offset in use`, so the game does not use the offset there and nothing changes; routes
+     with `RECOMP_MTL_ZSLOPE` on and off are the same code path.
+   - **Reflection/normal/sphere texgen: not ported.** This `nv2a_metal` has no texgen (no `u_tg`, `u_mv`, `u_tp`, no eye-linear
+     planes), so the PoA change, a small addition to PoA's existing texgen, has nothing to attach to. No `texgen ... not generated`
+     warning occurs in the route. Porting needs the whole fixed-function texgen first; do it only if a car or reflection looks wrong.
+   - `skin_second_layer` (`RECOMP_SKIN_LAYER`) left out as asked. Build OK, `tools/smoke.sh 60` OK.
+
 ## 4. A self-contained repository and the installer
 
 As for NFSU2: the patched tree is `engine/` (`git archive`), the patches are kept in `docs/upstream-patches/` as the record
